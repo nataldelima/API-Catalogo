@@ -17,22 +17,33 @@ namespace ApiCatalogo.Controllers
             _context = context;
         }
 
-        [HttpGet]
-        public ActionResult<IEnumerable<Produto>> Get()
+        [HttpGet("primeiro")]
+        [HttpGet("teste")]
+        [HttpGet("/primeiro")]
+        public ActionResult<Produto> GetPrimeiro()
         {
-            var produtos = _context.Produtos.AsNoTracking().ToList();
-            if (produtos is null)
-                return NotFound("Produtos não encontrados!");
-            return produtos;
+            var produto = _context.Produtos.FirstOrDefault();
+            if (produto is null)
+                return NotFound("Produto não encontrados!");
+            return produto;
         }
 
-        [HttpGet("{id:int}", Name = "ObterProduto")]
-        public ActionResult<Produto> Get(int id)
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Produto>>> GetAsync()
         {
-            var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
+            var produtos =  _context.Produtos.AsNoTracking().ToListAsync();
+            if (produtos is null)
+                return NotFound("Produtos não encontrados!");
+            return await produtos;
+        }
+
+        [HttpGet("{id:int:min(1)}", Name = "ObterProduto")]
+        public async Task<ActionResult<Produto>> GetAsync(int id)
+        {
+            var produto = _context.Produtos.FirstOrDefaultAsync(p => p.ProdutoId == id);
             if (produto is null)
                 return NotFound("Produto não encontrado!");
-            return produto;
+            return await produto;
         }
 
         [HttpPost]
@@ -65,7 +76,7 @@ namespace ApiCatalogo.Controllers
                 return NotFound("Produto não localizado...");
             _context.Produtos.Remove(produto);
             _context.SaveChanges();
-            
+
             return Ok(produto);
         }
     }
