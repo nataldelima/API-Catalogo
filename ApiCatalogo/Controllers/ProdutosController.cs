@@ -11,29 +11,24 @@ namespace ApiCatalogo.Controllers
     public class ProdutosController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly ILogger _logger;
 
-        public ProdutosController(AppDbContext context)
+        public ProdutosController(AppDbContext context, ILogger logger)
         {
             _context = context;
-        }
-
-        [HttpGet("primeiro")]
-        [HttpGet("teste")]
-        [HttpGet("/primeiro")]
-        public ActionResult<Produto> GetPrimeiro()
-        {
-            var produto = _context.Produtos.FirstOrDefault();
-            if (produto is null)
-                return NotFound("Produto não encontrados!");
-            return produto;
+            _logger = logger;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Produto>>> GetAsync()
         {
-            var produtos =  _context.Produtos.AsNoTracking().ToListAsync();
+            var produtos = _context.Produtos.AsNoTracking().ToListAsync();
             if (produtos is null)
-                return NotFound("Produtos não encontrados!");
+            {
+                _logger.LogWarning("Produtos não encontrados...");
+                return NotFound("Produtos não encontrados...");
+            }
+
             return await produtos;
         }
 
@@ -42,7 +37,11 @@ namespace ApiCatalogo.Controllers
         {
             var produto = _context.Produtos.FirstOrDefaultAsync(p => p.ProdutoId == id);
             if (produto is null)
-                return NotFound("Produto não encontrado!");
+            {
+                _logger.LogWarning($"Produto com id {id} não encontrado...");
+                return NotFound($"Produto com id {id} não encontrado...");
+            }
+
             return await produto;
         }
 
@@ -50,7 +49,11 @@ namespace ApiCatalogo.Controllers
         public ActionResult Post(Produto produto)
         {
             if (produto is null)
-                return BadRequest();
+            {
+                _logger.LogWarning("Dados inválidos...");
+                return BadRequest("Dados inválidos...");
+            }
+
             _context.Produtos.Add(produto);
             _context.SaveChanges();
 
@@ -61,7 +64,11 @@ namespace ApiCatalogo.Controllers
         public ActionResult Put(int id, Produto produto)
         {
             if (id != produto.ProdutoId)
-                return BadRequest();
+            {
+                _logger.LogWarning($"Produto com id{id} não localizado ...");
+                return BadRequest($"Produto com id{id} não localizado ...");
+            }
+
             _context.Entry(produto).State = EntityState.Modified;
             _context.SaveChanges();
 
@@ -73,7 +80,11 @@ namespace ApiCatalogo.Controllers
         {
             var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
             if (produto is null)
-                return NotFound("Produto não localizado...");
+            {
+                _logger.LogWarning($"Produto com id{id} não localizado ...");
+                return NotFound($"Produto com id{id} não localizado ...");
+            }
+
             _context.Produtos.Remove(produto);
             _context.SaveChanges();
 
