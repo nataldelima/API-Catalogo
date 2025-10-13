@@ -3,6 +3,7 @@ using ApiCatalogo.Context;
 using ApiCatalogo.Extensions;
 using ApiCatalogo.Filters;
 using ApiCatalogo.Logging;
+using ApiCatalogo.Repositories;
 using ApiCatalogo.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(mySqlConnection, ServerVersion.AutoDetect(mySqlConnection)));
 
 builder.Services.AddScoped<ApiLoggingFilter>();
+builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
