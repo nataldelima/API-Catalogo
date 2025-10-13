@@ -1,5 +1,6 @@
 using ApiCatalogo.Context;
 using ApiCatalogo.Models;
+using ApiCatalogo.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,39 +11,39 @@ namespace ApiCatalogo.Controllers
     [ApiController]
     public class ProdutosController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IProdutoRepository _repository;
         private readonly ILogger _logger;
 
-        public ProdutosController(AppDbContext context, ILogger logger)
+        public ProdutosController(IProdutoRepository repository, ILogger<ProdutosController> logger)
         {
-            _context = context;
+            _repository = repository;
             _logger = logger;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Produto>>> GetAsync()
+        public ActionResult<IEnumerable<Produto>> Get()
         {
-            var produtos = _context.Produtos.AsNoTracking().ToListAsync();
+            var produtos = _repository.GetProdutos().ToList();
             if (produtos is null)
             {
                 _logger.LogWarning("Produtos não encontrados...");
                 return NotFound("Produtos não encontrados...");
             }
 
-            return await produtos;
+            return Ok(produtos);
         }
 
         [HttpGet("{id:int:min(1)}", Name = "ObterProduto")]
-        public async Task<ActionResult<Produto>> GetAsync(int id)
+        public ActionResult<Produto> Get(int id)
         {
-            var produto = _context.Produtos.FirstOrDefaultAsync(p => p.ProdutoId == id);
+            var produto = _repository.GetProduto(id);
             if (produto is null)
             {
                 _logger.LogWarning($"Produto com id {id} não encontrado...");
                 return NotFound($"Produto com id {id} não encontrado...");
             }
 
-            return await produto;
+            return produto;
         }
 
         [HttpPost]
@@ -54,10 +55,9 @@ namespace ApiCatalogo.Controllers
                 return BadRequest("Dados inválidos...");
             }
 
-            _context.Produtos.Add(produto);
-            _context.SaveChanges();
+            var novoProduto = _repository.Create(produto);
 
-            return new CreatedAtRouteResult("ObterProduto", new { id = produto.ProdutoId }, produto);
+            return new CreatedAtRouteResult("ObterProduto", new { id = novoProduto.ProdutoId }, novoProduto);
         }
 
         [HttpPut("{id:int}")]
@@ -65,30 +65,29 @@ namespace ApiCatalogo.Controllers
         {
             if (id != produto.ProdutoId)
             {
-                _logger.LogWarning($"Produto com id{id} não localizado ...");
-                return BadRequest($"Produto com id{id} não localizado ...");
+                _logger.LogWarning($"Produto com id = {id} não localizado ...");
+                return BadRequest($"Produto com id = {id} não localizado ...");
             }
 
-            _context.Entry(produto).State = EntityState.Modified;
-            _context.SaveChanges();
-
-            return Ok(produto);
+            return _repository.Update(produto)
+                ? Ok(produto)
+                : StatusCode(500, $"Falha ao atualizar o produto de id = {id}!");
         }
 
         [HttpDelete("{id:int}")]
         public ActionResult Delete(int id)
         {
-            var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
-            if (produto is null)
+            var produto = _repository.GetProduto(id);
+            if (id != produto.ProdutoId)
             {
-                _logger.LogWarning($"Produto com id{id} não localizado ...");
-                return NotFound($"Produto com id{id} não localizado ...");
+                _logger.LogWarning($"Produto com id = {id} não localizado ...");
+                return BadRequest($"Produto com id = {id} não localizado ...");
             }
 
-            _context.Produtos.Remove(produto);
-            _context.SaveChanges();
-
-            return Ok(produto);
+            
+            return _repository.Delete(id)
+                ? Ok($"Produto de id = {id} foi excluído")
+                : StatusCode(500, $"Falha ao excluirr o produto de id = {id}!");
         }
     }
 }
