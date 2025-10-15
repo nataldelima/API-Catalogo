@@ -13,10 +13,10 @@ namespace ApiCatalogo.Controllers
     [ApiController]
     public class CategoriasController : ControllerBase
     {
-        private readonly ICategoriaRepository _repository;
+        private readonly IRepository<Categoria> _repository;
         private readonly ILogger _logger;
 
-        public CategoriasController(ICategoriaRepository repository, ILogger<CategoriasController> logger)
+        public CategoriasController(IRepository<Categoria> repository, ILogger<CategoriasController> logger)
         {
             _repository = repository;
             _logger = logger;
@@ -25,14 +25,14 @@ namespace ApiCatalogo.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<Categoria>> Get()
         {
-            var categoriaas = _repository.GetCategorias();
+            var categoriaas = _repository.GetAll();
             return Ok(categoriaas);
         }
 
         [HttpGet("{id:int}", Name = "ObterCategoria")]
         public ActionResult<Categoria> Get(int id)
         {
-            var categoria = _repository.GetCategoria(id);
+            var categoria = _repository.Get(c=>c.CategoriaId == id);
             if (categoria is null)
             {
                 _logger.LogWarning($"Categoria com id {id} não encontrada...");
@@ -73,14 +73,14 @@ namespace ApiCatalogo.Controllers
         [HttpDelete("{id:int}")]
         public ActionResult<Categoria> Delete(int id)
         {
-            var categoria = _repository.GetCategoria(id);
+            var categoria = _repository.Get(c=> c.CategoriaId ==id);
             if (categoria is null)
             {
                 _logger.LogWarning($"Categoria com id {id} não localizada...");
                 return NotFound($"Categoria com id {id} não localizada...");
             }
 
-            var categoriaExcluida = _repository.Delete(id);
+            var categoriaExcluida = _repository.Delete(categoria);
             return Ok(categoriaExcluida);
         }
     }
