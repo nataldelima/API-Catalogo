@@ -8,6 +8,7 @@
 
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="15.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="9.0.10" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.12">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

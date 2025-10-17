@@ -4,6 +4,7 @@ using ApiCatalogo.Models;
 using ApiCatalogo.Repositories;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -82,6 +83,41 @@ namespace ApiCatalogo.Controllers
             var novoProdutoDto = _mapper.Map<ProdutoDTO>(novoProduto);
 
             return new CreatedAtRouteResult("ObterProduto", new { id = novoProdutoDto.ProdutoId }, novoProdutoDto);
+        }
+
+        
+        /// <summary>
+        /// Atualiza parcialmente um produto.
+        /// </summary>
+        /// <remarks>
+        /// Exemplo de corpo:
+        ///
+        ///     PATCH /api/produtos/1/updatePartial
+        ///     [
+        ///       { "op": "replace", "path": "/nome", "value": "Produto alterado" },
+        ///       { "op": "replace", "path": "/preco", "value": 99.99 }
+        ///     ]
+        /// </remarks>
+        [HttpPatch("{id}/UpdatePartial")]
+        public ActionResult<ProdutoDTOUpdateResponse> Patch([FromRoute] int id, [FromBody]
+            JsonPatchDocument<ProdutoDTOUpdateRequest> patchProdutoDTO)
+        {
+            if (patchProdutoDTO is null || id <= 0)
+                return BadRequest();
+            
+            var produto = _uow.ProdutoRepository.Get(c => c.ProdutoId == id);
+            if (produto is null)
+                return NotFound();
+            
+            var produtoUpdateRequest = _mapper.Map<ProdutoDTOUpdateRequest>(produto);
+            patchProdutoDTO.ApplyTo(produtoUpdateRequest);
+            if (!TryValidateModel(produtoUpdateRequest))
+                return BadRequest(ModelState);
+            
+            _mapper.Map(produtoUpdateRequest, produto);
+            _uow.ProdutoRepository.Update(produto);
+            _uow.Commit();
+            return Ok(_mapper.Map<ProdutoDTOUpdateResponse>(produto));
         }
 
         [HttpPut("{id:int}")]
