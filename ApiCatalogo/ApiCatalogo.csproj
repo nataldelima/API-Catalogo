@@ -16,6 +16,8 @@
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
         <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.1" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
+        <PackageReference Include="X.PagedList" Version="10.5.9" />
+        <PackageReference Include="X.PagedList.Mvc.Core" Version="10.5.9" />
     </ItemGroup>
 
 </Project>
