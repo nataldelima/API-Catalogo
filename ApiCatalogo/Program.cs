@@ -9,6 +9,7 @@ using ApiCatalogo.Logging;
 using ApiCatalogo.Models;
 using ApiCatalogo.Repositories;
 using ApiCatalogo.Services;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -30,6 +31,12 @@ builder.Services.AddControllers(options => { options.Filters.Add(typeof(ApiExcep
         options.JsonSerializerOptions.DefaultIgnoreCondition =
             System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
+var OrigensComAcessoPermitido = "_origensComAcessoPermitido";
+builder.Services.AddCors(options => options.AddPolicy(OrigensComAcessoPermitido,
+    policy =>
+    {
+        policy.WithOrigins("http://www.apirequest.io").WithMethods("GET", "POST").AllowAnyHeader().AllowCredentials();
+    }));
 
 var secretKey = builder.Configuration["JWT:SecretKey"] ?? throw new ArgumentException("Invalid secret key!");
 
@@ -95,6 +102,22 @@ string mySqlConnection = builder.Configuration.GetConnectionString("DefaultConne
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(mySqlConnection, ServerVersion.AutoDetect(mySqlConnection)));
 
+
+builder.Services.AddApiVersioning(o =>
+{
+    o.DefaultApiVersion = new ApiVersion(1, 0);
+    o.AssumeDefaultVersionWhenUnspecified = true;
+    o.ReportApiVersions = true;
+    o.ApiVersionReader = ApiVersionReader.Combine(
+        new QueryStringApiVersionReader(),
+        new UrlSegmentApiVersionReader());
+}).AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
+
+
 builder.Services.AddScoped<ApiLoggingFilter>();
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
@@ -130,6 +153,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+app.UseCors(OrigensComAcessoPermitido);
 app.UseAuthorization();
 
 app.MapControllers();

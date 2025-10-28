@@ -27,7 +27,6 @@ namespace ApiCatalogo.Controllers
             _logger = logger;
         }
 
-        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CategoriaDTO>>> Get()
         {
